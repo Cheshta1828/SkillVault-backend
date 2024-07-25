@@ -213,4 +213,5 @@ def forgot_password():
         auth.send_password_reset_email(email)
         return jsonify({"message":"Password reset email sent.Please check your email"}),200
     except Exception as e:
-        return jsonify({"error":"Email not registered"}),400
+        print(e)
+        return jsonify({"message":"Password reset email sent.Please check your email"}),200
