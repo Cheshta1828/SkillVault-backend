@@ -207,4 +207,10 @@ def resend_email_verification():
     except  Exception as e:
         return jsonify({"error":"Invalid credentials"}),400
 
-
+def forgot_password():
+    try:
+        email=request.form['email']
+        auth.send_password_reset_email(email)
+        return jsonify({"message":"Password reset email sent.Please check your email"}),200
+    except Exception as e:
+        return jsonify({"error":"Email not registered"}),400
