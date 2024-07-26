@@ -153,10 +153,10 @@ def login():
         expiry=datetime.datetime.now()+datetime.timedelta(days=7)
         db['Accounts'].update_one({'email':email},{'$set':{'refreshtoken':refreshtoken,'refreshtokenexpiry':expiry}})
         res = make_response(jsonify({"status": "Successfully logged in"}))
-        res.set_cookie("token", token, httponly=True, samesite="None", secure=True)
+        res.set_cookie("token", token, httponly=True, samesite="None", secure=True, max_age=3600)
         print("set cookie")
         
-        res.set_cookie("refreshtoken", refreshtoken, httponly=True, samesite="None", secure=True)
+        res.set_cookie("refreshtoken", refreshtoken, httponly=True, samesite="None", secure=True, max_age=60*60*24*5)
         
         return res
     except Exception as e:
