@@ -215,3 +215,21 @@ def forgot_password():
     except Exception as e:
         print(e)
         return jsonify({"message":"Password reset email sent.Please check your email"}),200
+
+
+@verify_token
+def profile(user_email):
+    if request.method=='GET':
+        try:
+            db=get_db()
+            email=user_email
+            user=db.Accounts.find_one({'email':email})
+            print(user)
+            if user:
+                return jsonify({"name":user['name'],"email":user['email'],"gender":user['gender'],"pronouns":user['pronouns'],"batch":user['batch'],"role":user['role']}),200
+
+            else:
+                return jsonify({"error":"No user found"}),400
+        except Exception as e:
+            print(e)
+            return jsonify({"error":"Error while fetching profile"}),500

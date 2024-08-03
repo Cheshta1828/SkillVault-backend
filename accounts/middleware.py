@@ -32,8 +32,10 @@ def verify_token(f):
         print(access_token)
         if access_token:
             try:
+                email = None
                 # Verify the JWT token using Firebase Auth
                 decoded_token = auth.verify_id_token(access_token)
+
                 if decoded_token['email_verified'] == False:
                     return jsonify({"error": "Email not verified"}), 400
                 
@@ -41,6 +43,7 @@ def verify_token(f):
                 if not decoded_token:
                     return jsonify({"error": "Please login again."}), 400
                 else:
+                    email=decoded_token['firebase']['identities']['email'][0]
                     exp=decoded_token['exp']
                     print(exp)
                     current_time = datetime.datetime.now().timestamp()
@@ -78,7 +81,7 @@ def verify_token(f):
                 
                 
                 
-                return f(*args, **kwargs)
+                return f(email,*args, **kwargs)
             except Exception as e:
                 print(e)
                 return jsonify({"error": "Unauthorized access"}), 400
