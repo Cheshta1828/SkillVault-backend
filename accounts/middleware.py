@@ -16,9 +16,9 @@ import os
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(),'sv.json')
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
-print(cred)
+# print(cred)
 firebase_admin.initialize_app(cred)
-print("done")
+# print("done")
 def get_db():
     if 'db' not in g:
         client = MongoClient(current_app.config['MONGO_URI'])
@@ -45,24 +45,24 @@ def verify_token(f):
                 else:
                     email=decoded_token['firebase']['identities']['email'][0]
                     exp=decoded_token['exp']
-                    print(exp)
+                    # print(exp)
                     current_time = datetime.datetime.now().timestamp()
-                    print(current_time)
-                    print(exp>=current_time)
+                    # print(current_time)
+                    # print(exp>=current_time)
                 #case 1: token is valid and expired 
                  #-check for refresh token i.e match from db and then generate a new access token and if want a refresh token too and then let them access the protected end point
                     if exp<current_time:
-                        print("expired")
+                        # print("expired")
                         try:
                             refresh_token=request.cookies.get('refreshtoken')
-                            print(refresh_token)
+                            # print(refresh_token)
                             email=decoded_token['firebase']['identities']['email'][0]
-                            print(email)
+                            # print(email)
                             db=get_db()
                             user=db['Accounts'].find_one({'email':email})
                             user_refresh_token=user['refreshtoken']
                             if refresh_token==user_refresh_token:
-                                print("refresh token matched")
+                                # print("refresh token matched")
                                 refresh_expiry=user['refreshtokenexpiry']
                                 current_time = datetime.datetime.now().timestamp()
                                 if float(refresh_expiry.timestamp())>current_time:

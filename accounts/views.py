@@ -8,6 +8,9 @@ from  .firebase import firebase
 from PIL import Image
 import datetime
 from .middleware import verify_token  
+import base64
+from io import BytesIO
+from flask import send_from_directory
 
 import uuid
 auth=firebase.auth()
@@ -46,7 +49,7 @@ def register():
             return jsonify({"error":"University name is required.If you don't have one please type NA."}),500
         else:
             university=request.form['university']
-    
+
         if 'collegeidimage' not in request.files.keys():
             collegeidimage=None
             collegeid='Profile.jpg'
@@ -109,7 +112,8 @@ def register():
                         'university':university,
                         'collegeid':collegeid,
                         'gender':gender,
-                        'pronouns':pronouns
+                        'pronouns':pronouns,
+                        'isalloted':False,
                     })
                 print("inserted in mongo")
                 
@@ -181,7 +185,7 @@ def login():
     
     """
 @verify_token
-def protected():
+def protected(user_mail):
     return jsonify({"message":"you have got the access"}),200
 
 
@@ -226,46 +230,66 @@ def profile(user_email):
             user=db.Accounts.find_one({'email':email})
             print(user)
             if user:
-                return jsonify({"name":user['name'],"email":user['email'],"gender":user['gender'],"pronouns":user['pronouns'],"batch":user['batch'],"role":user['role']}),200
+                return jsonify({"name":user['name'],"email":user['email'],"gender":user['gender'],"pronouns":user['pronouns'],"batch":user['batch'],"role":user['role'] , "profile": user['profilepicture']}),200
 
             else:
                 return jsonify({"error":"No user found"}),400
         except Exception as e:
             print(e)
             return jsonify({"error":"Error while fetching profile"}),500
-    if request.method=='UPDATE':
+    if request.method=='PUT':
         try:
             db=get_db()
             email=user_email
             user=db.Accounts.find_one({'email':email})
             print(user)
+            name = user['name']
+            gender = user['gender']
+            pronouns = user['pronouns']
             if 'name' in request.form.keys():
                     name=request.form['name']
                     if not re.match("^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$",name):
                         return jsonify({"error":"Name is invalid"}),500
             if 'gender' in request.form.keys():
-                    gender=request.form.keys['gender']
+                    gender=request.form['gender']
                     
             if 'pronouns' in request.form.keys():
                     pronouns=request.form['pronouns']
-            if 'profilepicture' in  request.files.keys():
-                profilepicture=request.files['profilepicture']
+            if 'profilepicture' in request.form and request.form['profilepicture'] != 'null':
+                profilepicture = request.form['profilepicture']
                 if profilepicture:
                     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
-                    file_name, ext =profilepicture.filename.split('.')
-                    if ext not in ALLOWED_EXTENSIONS:
-                        return jsonify({"error":"please provide a valid image file (jpg , jpeg and png allowed)"}),400
-                    file_name = f"{name}_profile_{uuid.uuid1()}.{ext}"
-                    if not os.path.exists(f"static/profilepictures"):
-                        os.mkdir(f"static/profilepictures")
-                    profilepicture = Image.open(profilepicture)
-                    profilepicture.thumbnail((600, 600))
-                    profilepicture.save(f"static/profilepictures/{file_name}")
-                    profilepicture=file_name
-                    db.Accounts.update_one({'email':email},{'$set':{'name':name,'gender':gender,'pronouns':pronouns,'profilepicture':profilepicture}})
+
+                if profilepicture.startswith('data:image/'):
+                    header, profilepicture = profilepicture.split(',', 1)
+
+                # Decode the Base64 string
+                image_data = base64.b64decode(profilepicture)
+                image = Image.open(BytesIO(image_data))
+
+                # Generate a unique filename
+                file_name = f"{name.split(" ")[0]}_profile_{uuid.uuid1()}.png"
+
+                # Ensure the directory exists
+                if not os.path.exists('static/profilepictures'):
+                    os.makedirs('static/profilepictures')
+
+                # Save the image
+                image.thumbnail((600, 600))
+                image.save(os.path.join('static/profilepictures', file_name))
+                try:
+                    old_profile = user['profilepicture']
+                    os.remove(f"static/profilepictures/{old_profile}")
+                except:
+                    pass
             
-                else:
-                    db.Accounts.update_one({'email':email},{'$set':{'name':name,'gender':gender,'pronouns':pronouns}})
+                db.Accounts.update_one({'email':email},{'$set':{'name':name,'gender':gender,'pronouns':pronouns,'profilepicture':file_name}})
+
+            
+            else:
+                db.Accounts.update_one({'email':email},{'$set':{'name':name,'gender':gender,'pronouns':pronouns}})
+
+            return jsonify({"message":"Profile updated successfully"}),200
             
             
             
@@ -273,5 +297,13 @@ def profile(user_email):
             print(e)
             return jsonify({"error":"Error while updating profile"}),500
                     
-                    
+@verify_token
+def profile_picture(user_email,picture):
+    print(picture)
+    try:
+        return send_from_directory('static/profilepictures', picture)
+       
+    except Exception as e:
+        print(e)
+        return jsonify({"error":"Error while fetching profile picture"}),500                 
         
