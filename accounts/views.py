@@ -113,7 +113,10 @@ def register():
                         'collegeid':collegeid,
                         'gender':gender,
                         'pronouns':pronouns,
-                        'isalloted':False,
+                        'is_alloted':False, #offer letter sent -we ll let you know screen
+                        'has_chosen': False,# chosen tech stack and all - select domain
+                        'has_accepted':False,# offfer letter accepted - we ve sent offerleterr for acceptance 
+                        
                     })
                 print("inserted in mongo")
                 
@@ -186,7 +189,10 @@ def login():
     """
 @verify_token
 def protected(user_mail):
-    return jsonify({"message":"you have got the access"}),200
+    user=db.Accounts.find_one({'email':user_mail})
+    print(user)
+
+    return jsonify({"message":"you have got the access","user":user}),200
 
 
 def logout():
