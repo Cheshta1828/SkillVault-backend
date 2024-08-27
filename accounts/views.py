@@ -189,8 +189,9 @@ def login():
     """
 @verify_token
 def protected(user_mail):
-    user=db.Accounts.find_one({'email':user_mail})
-    print(user)
+    db = get_db()
+    user=db.Accounts.find_one({'email':user_mail}, {'_id': False})
+    print("this is user")
 
     return jsonify({"message":"you have got the access","user":user}),200
 
